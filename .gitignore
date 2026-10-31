@@ -1,0 +1,4 @@
+touch .gitignore
+echo "node_modules/" >> .gitignore
+echo ".wwebjs_auth/" >> .gitignore
+echo ".wwebjs_cache/" >> .gitignore
