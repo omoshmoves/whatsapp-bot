@@ -49,7 +49,7 @@ client.on('message', async (msg) => {
         if (text === 'hello' || text === 'hi' || text === 'hey') {
             await msg.reply("Hey there! 👋 How's everything going?");
         }
-        else if (text === 'how are you' || text === 'how do you do') {
+        else if (text === 'how are you' || text === 'uko aje' || text === 'how do you do') {
             await msg.reply("I'm doing awesome, how about you?");
         }
         else if (text === 'thank you' || text === 'thanks') {

@@ -30,7 +30,7 @@ client.on('message', async (msg) => {
     if (text.includes('hello') || text.includes('hi') || text.includes('hey')) {
         await msg.reply("Hey there! 👋 How's everything going with Bot 2?");
     }
-    else if (text.includes('how are you') || text.includes('how do you do')) {
+    else if (text.includes('how are you') || text.includes('uko aje') || text.includes('how do you do')) {
         await msg.reply("I'm doing awesome, how about you?");
     }
     else if (text.includes('thank you') || text.includes('thanks')) {
