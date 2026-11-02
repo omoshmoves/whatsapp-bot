@@ -4,9 +4,19 @@ const qrcode = require('qrcode-terminal');
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
-        headless: false,
-        executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        headless: true, // Set to false if you want to see the browser window
+        executablePath: process.platform === 'win32' 
+            ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' 
+            : '/usr/bin/chromium-browser',
+        args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu'
+        ]
     }
 });
 
@@ -16,73 +26,85 @@ client.on('qr', (qr) => {
 });
 
 client.on('ready', () => {
-    console.log('Success! Your WhatsApp bot is online and actively monitoring statuses.');
+    console.log('Success! Your WhatsApp bot is online.');
     
-    // Activate the background status loop
-    startStatusViewerLoop();
+    // Activate the background status loop after a brief 5s warmup delay
+    setTimeout(() => {
+        startStatusViewerLoop();
+    }, 5000);
 });
 
-// Human-like Conversational Message Handler (Strict Triggers Only)
+// Message Handler with Instant Group Filter and Keyword Triggers
 client.on('message', async (msg) => {
-    const text = msg.body.toLowerCase().trim();
+    console.log('📥 Incoming message detected:', msg.body);
 
-    if (text === 'hello' || text === 'hi' || text === 'hey') {
-        await msg.reply("Hey there! 👋 How's everything going?");
-    }
-    else if (text === 'how are you' || text === 'how do you do') {
-        await msg.reply("I'm doing awesome, how about you?");
-    }
-    else if (text === 'thank you' || text === 'thanks') {
-        await msg.reply("You're welcome! 😊");  
-    }
-    else if (text === 'goodbye' || text === 'bye') {
-        await msg.reply("See you later! 👋");
-    }
-    else if (text === 'hey sasa' || text === 'sasa') {
-        await msg.reply("Poa sana");
-    }
-    else if (text === 'mzee' || text === 'omera' || text === 'oya') {
-        await msg.reply("Nichapie");
-    }   
-    else if (text === 'what is your name' || text === 'who are you'){ 
-        await msg.reply("I'm Patrick's assistant!");
-    }
-    else if (text === 'niaje' || text === 'mambo') {
-        await msg.reply("Poa sana");
-    }
-    else if (text === 'ok' || text === 'sawa' || text === 'okay'){
-        await msg.reply("👍");
-    }
-    else if (text === 'help' || text === 'what can you do') {
-        await msg.reply("I'm Patrick's assistant! You can ask me to send text messages by saying something like: *'send message to 1234567890 hello there'*.");
-    }
-    else if (text.startsWith('send message to ') || text.startsWith('send text to ') || text.startsWith('text ')) {
-        const parts = msg.body.trim().split(' ');
-        
-        let targetNumber, messageBody;
-        if (text.startsWith('text ')) {
-            targetNumber = parts[1];
-            messageBody = parts.slice(2).join(' ');
-        } else {
-            targetNumber = parts[3];
-            messageBody = parts.slice(4).join(' ');
-        }
+    try {
+        // Instantly ignore group chats using msg.from (no async delay or failure)
+        if (msg.from && msg.from.endsWith('@g.us')) return;
 
-        if (!targetNumber || !messageBody) {
-            await msg.reply("Oops! To send a message, try phrasing it like: *'send message to <phone_number> <your message>'*");
-            return;
-        }
+        const text = msg.body ? msg.body.toLowerCase().trim() : '';
+        if (!text) return;
 
-        const chatId = `${targetNumber}@c.us`;
-        try {
-            await client.sendMessage(chatId, messageBody);
-            await msg.reply(`Done! 👍 I've sent that message off to ${targetNumber}.`);
-        } catch (error) {
-            console.error('Failed to send message:', error);
-            await msg.reply("Hmm, I couldn't send that message. Double-check if the phone number is correct.");
+        // --- Static Command & Keyword Triggers ---
+        if (text === 'hello' || text === 'hi' || text === 'hey') {
+            await msg.reply("Hey there! 👋 How's everything going?");
         }
+        else if (text === 'how are you' || text === 'how do you do') {
+            await msg.reply("I'm doing awesome, how about you?");
+        }
+        else if (text === 'thank you' || text === 'thanks') {
+            await msg.reply("You're welcome! 😊");  
+        }
+        else if (text === 'goodbye' || text === 'bye') {
+            await msg.reply("See you later! 👋");
+        }
+        else if (text === 'hey sasa' || text === 'sasa') {
+            await msg.reply("Poa sana");
+        }
+        else if (text === 'mzee' || text === 'omera' || text === 'oya') {
+            await msg.reply("Nichapie");
+        }   
+        else if (text === 'what is your name' || text === 'who are you'){ 
+            await msg.reply("I'm Patrick's assistant!");
+        }
+        else if (text === 'niaje' || text === 'mambo') {
+            await msg.reply("Poa sana");
+        }
+        else if (text === 'ok' || text === 'sawa' || text === 'okay'){
+            await msg.reply("👍");
+        }
+        else if (text === 'help' || text === 'what can you do') {
+            await msg.reply("I'm Patrick's assistant! You can use: *'send message to <number> <message>'*.");
+        }
+        else if (text.startsWith('send message to ') || text.startsWith('send text to ') || text.startsWith('text ')) {
+            const parts = msg.body.trim().split(' ');
+            
+            let targetNumber, messageBody;
+            if (text.startsWith('text ')) {
+                targetNumber = parts[1];
+                messageBody = parts.slice(2).join(' ');
+            } else {
+                targetNumber = parts[3];
+                messageBody = parts.slice(4).join(' ');
+            }
+
+            if (!targetNumber || !messageBody) {
+                await msg.reply("Oops! To send a message, try phrasing it like: *'send message to <phone_number> <your message>'*");
+                return;
+            }
+
+            const chatId = `${targetNumber}@c.us`;
+            try {
+                await client.sendMessage(chatId, messageBody);
+                await msg.reply(`Done! 👍 I've sent that message off to ${targetNumber}.`);
+            } catch (error) {
+                console.error('Failed to send message:', error);
+                await msg.reply("Hmm, I couldn't send that message. Double-check if the phone number is correct.");
+            }
+        }
+    } catch (err) {
+        console.error('Error handling message event:', err);
     }
-    // Any other random message from contacts will now be completely ignored.
 });
 
 /**
@@ -97,12 +119,13 @@ function startStatusViewerLoop() {
             const page = client.pupPage;
             if (!page) return;
 
-            // Look for the Status icon button on WhatsApp Web interface and click it
             const statusButtonClicked = await page.evaluate(() => {
                 const selectors = [
                     'span[data-icon="status-v3"]',
+                    'span[data-icon="status"]',
                     'button[aria-label="Status"]',
-                    'span[data-icon="status"]'
+                    'div[title="Status"]',
+                    'span[data-icon="refresh"]'
                 ];
                 
                 let btn = null;
@@ -112,7 +135,7 @@ function startStatusViewerLoop() {
                 }
 
                 if (btn) {
-                    let clickable = btn.closest('div[role="button"]') || btn;
+                    let clickable = btn.closest('div[role="button"]') || btn.closest('button') || btn;
                     clickable.click();
                     return true;
                 }
@@ -120,26 +143,24 @@ function startStatusViewerLoop() {
             });
 
             if (statusButtonClicked) {
-                // Give it a brief second to open the status list pane
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                await new Promise(resolve => setTimeout(resolve, 2500));
 
-                // Now look for unread status items in the list and click them
                 await page.evaluate(() => {
-                    const statusRows = document.querySelectorAll('div[data-testid="cell-frame-container"]');
-                    statusRows.forEach(row => {
-                        const unreadRing = row.querySelector('canvas') || row.querySelector('.unread-count');
-                        if (unreadRing) {
-                            row.click();
+                    const items = document.querySelectorAll('div[data-testid="cell-frame-container"], div[role="listitem"]');
+                    items.forEach(item => {
+                        const unreadIndicator = item.querySelector('canvas') || item.querySelector('span[aria-label*="Unread"]');
+                        if (unreadIndicator) {
+                            item.click();
                         }
                     });
                 });
 
-                console.log('[Status Loop] Checked and cleared unread statuses.');
+                console.log('[Status Loop] Checked and processed unread statuses.');
             }
         } catch (err) {
-            // Silently catch background navigation errors so the bot doesn't crash
+            // Silently ignore background loop navigation errors
         }
-    }, 15000); // Runs every 15 seconds
+    }, 15000);
 }
 
 client.initialize();
