@@ -13,8 +13,6 @@ const client = new Client({
     }
 });
 
-const qrcode = require('qrcode-terminal');
-
 client.on('qr', (qr) => {
     console.log('Scan this QR code:');
     // Force small size to prevent line-wrapping distortion in server logs
