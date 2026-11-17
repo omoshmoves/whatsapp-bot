@@ -6,9 +6,13 @@ const client = new Client({
     puppeteer: {
         headless: true,
         args: [
-            '--no-sandbox', 
+            '--no-sandbox',
             '--disable-setuid-sandbox',
-            '--window-size=1280,800' // Forces a stable desktop viewport
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu'
         ]
     }
 });
