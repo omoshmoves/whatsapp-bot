@@ -33,6 +33,19 @@ client.on('qr', async (qr) => {
 client.on('ready', () => {
     console.log('Success! Your WhatsApp bot is online.');
 });
+const fs = require('fs');
+const path = require('path');
+
+// Automatically clear stale Chrome lock files left behind by abrupt container restarts
+const lockFilePath = path.join(__dirname, '.wwebjs_auth', 'session', 'SingletonLock');
+if (fs.existsSync(lockFilePath)) {
+    try {
+        fs.unlinkSync(lockFilePath);
+        console.log('Successfully removed stale browser lock file.');
+    } catch (err) {
+        console.error('Failed to remove stale lock file:', err);
+    }
+}
 
 client.initialize();
 
