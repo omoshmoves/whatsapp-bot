@@ -5,22 +5,36 @@ const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
         headless: true,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--single-process',
-            '--no-zygote'
+            '--disable-gpu'
         ]
     }
 });
 
-client.on('qr', (qr) => {
-    console.log('Scan this QR code:');
-    // Force small size to prevent line-wrapping distortion in server logs
-    qrcode.generate(qr, { small: true });
+// Use pairing code instead of scanning a distorted terminal QR code
+client.on('qr', async (qr) => {
+    console.log('QR code received, generating pairing code...');
+    try {
+        // Replace with your actual WhatsApp phone number including country code (e.g., 2547XXXXXXXX)
+        const phoneNumber = '2547XXXXXXXX'; 
+        const pairingCode = await client.requestPairingCode(phoneNumber);
+        console.log('========================================');
+        console.log('YOUR WHATSAPP PAIRING CODE:', pairingCode);
+        console.log('========================================');
+    } catch (error) {
+        console.error('Failed to generate pairing code:', error);
+    }
 });
+
+client.on('ready', () => {
+    console.log('Success! Your WhatsApp bot is online.');
+});
+
+client.initialize();
 
 client.on('ready', () => {
     console.log('Success! Your WhatsApp bot is online.');
