@@ -5,13 +5,19 @@ const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
         headless: true,
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox',
+            '--window-size=1280,800' // Forces a stable desktop viewport
+        ]
     }
 });
 
+const qrcode = require('qrcode-terminal');
+
 client.on('qr', (qr) => {
-    console.log('--- SCAN THIS QR CODE ---');
+    console.log('Scan this QR code:');
+    // Force small size to prevent line-wrapping distortion in server logs
     qrcode.generate(qr, { small: true });
 });
 
