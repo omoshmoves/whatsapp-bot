@@ -4,19 +4,9 @@ const qrcode = require('qrcode-terminal');
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
-        headless: true, // Set to false if you want to see the browser window
-        executablePath: process.platform === 'win32' 
-            ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' 
-            : '/usr/bin/chromium-browser',
-        args: [
-            '--no-sandbox', 
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu'
-        ]
+        headless: true,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
     }
 });
 
