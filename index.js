@@ -30,22 +30,29 @@ client.on('qr', async (qr) => {
     }
 });
 
-client.on('ready', () => {
-    console.log('Success! Your WhatsApp bot is online.');
-});
 const fs = require('fs');
 const path = require('path');
 
-// Automatically clear stale Chrome lock files left behind by abrupt container restarts
-const lockFilePath = path.join(__dirname, '.wwebjs_auth', 'session', 'SingletonLock');
-if (fs.existsSync(lockFilePath)) {
-    try {
-        fs.unlinkSync(lockFilePath);
-        console.log('Successfully removed stale browser lock file.');
-    } catch (err) {
-        console.error('Failed to remove stale lock file:', err);
+// Recursively clear any leftover Chrome lock files from abrupt container restarts
+const authDir = path.join(__dirname, '.wwebjs_auth');
+function clearLocks(dir) {
+    if (fs.existsSync(dir)) {
+        fs.readdirSync(dir).forEach((file) => {
+            const curPath = path.join(dir, file);
+            if (fs.lstatSync(curPath).isDirectory()) {
+                clearLocks(curPath);
+            } else if (file === 'SingletonLock' || file === 'SingletonCookie' || file === 'SingletonSocket') {
+                try {
+                    fs.unlinkSync(curPath);
+                    console.log(`Removed stale lock: ${curPath}`);
+                } catch (err) {
+                    console.error(`Failed to remove lock ${curPath}:`, err);
+                }
+            }
+        });
     }
 }
+clearLocks(authDir);
 
 client.initialize();
 
