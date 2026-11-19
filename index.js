@@ -4,57 +4,23 @@ const qrcode = require('qrcode-terminal');
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
-        headless: true,
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
+        headless: true, // Set back to true once you verify what loads
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu'
+            '--disable-dev-shm-usage'
         ]
+    },
+    webVersionCache: {
+        type: 'remote',
+        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1030410331-alpha.html'
     }
 });
 
-// Use pairing code instead of scanning a distorted terminal QR code
-client.on('qr', async (qr) => {
-    console.log('QR code received, generating pairing code...');
-    try {
-        // Replace with your actual WhatsApp phone number including country code (e.g., 2547XXXXXXXX)
-        const phoneNumber = '2547XXXXXXXX'; 
-        const pairingCode = await client.requestPairingCode(phoneNumber);
-        console.log('========================================');
-        console.log('YOUR WHATSAPP PAIRING CODE:', pairingCode);
-        console.log('========================================');
-    } catch (error) {
-        console.error('Failed to generate pairing code:', error);
-    }
+client.on('qr', (qr) => {
+    console.log('--- SCAN THIS QR CODE ---');
+    qrcode.generate(qr, { small: true });
 });
-
-const fs = require('fs');
-const path = require('path');
-
-// Recursively clear any leftover Chrome lock files from abrupt container restarts
-const authDir = path.join(__dirname, '.wwebjs_auth');
-function clearLocks(dir) {
-    if (fs.existsSync(dir)) {
-        fs.readdirSync(dir).forEach((file) => {
-            const curPath = path.join(dir, file);
-            if (fs.lstatSync(curPath).isDirectory()) {
-                clearLocks(curPath);
-            } else if (file === 'SingletonLock' || file === 'SingletonCookie' || file === 'SingletonSocket') {
-                try {
-                    fs.unlinkSync(curPath);
-                    console.log(`Removed stale lock: ${curPath}`);
-                } catch (err) {
-                    console.error(`Failed to remove lock ${curPath}:`, err);
-                }
-            }
-        });
-    }
-}
-clearLocks(authDir);
-
-client.initialize();
 
 client.on('ready', () => {
     console.log('Success! Your WhatsApp bot is online.');
